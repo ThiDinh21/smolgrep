@@ -10,9 +10,6 @@ fn main() {
         process::exit(1);
     });
 
-    println!("Query: {}", config.query);
-    println!("File: {}", config.filename);
-
     if let Err(e) = smolgrep::run(config) {
         println!("Application error: {}", e);
         process::exit(1);
