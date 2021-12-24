@@ -1,4 +1,6 @@
-use std::{env, error::Error, fs, process};
+use std::{env, process};
+
+use smolgrep::Config;
 
 fn main() {
     let args = env::args().collect::<Vec<String>>();
@@ -11,32 +13,8 @@ fn main() {
     println!("Query: {}", config.query);
     println!("File: {}", config.filename);
 
-    if let Err(e) = run(config) {
+    if let Err(e) = smolgrep::run(config) {
         println!("Application error: {}", e);
         process::exit(1);
-    }
-}
-
-fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let content = fs::read_to_string(config.filename)?;
-
-    println!("Content: {}", content);
-
-    Ok(())
-}
-
-struct Config {
-    query: String,
-    filename: String,
-}
-
-impl Config {
-    fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
-        let query = args[1].clone();
-        let filename = args[2].clone();
-        Ok(Config { query, filename })
     }
 }
