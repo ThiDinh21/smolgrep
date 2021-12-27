@@ -1,4 +1,8 @@
-use std::{env, error::Error, fs};
+use std::{
+    env::{self, Args},
+    error::Error,
+    fs,
+};
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string(config.filename)?;
@@ -16,13 +20,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 fn search_case_sensitive<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
-    let mut match_lines: Vec<&str> = vec![];
-    for line in content.lines() {
-        if line.contains(query) {
-            match_lines.push(line);
-        }
-    }
-    match_lines
+    content
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 fn search_case_insensitive<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
@@ -43,13 +44,22 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
+    pub fn new(mut args: Args) -> Result<Config, &'static str> {
         if args.len() < 3 {
             return Err("not enough arguments");
         }
 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        // Skip program name
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't receive a query string"),
+        };
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't receive a file name"),
+        };
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
         Ok(Config {
@@ -62,39 +72,6 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
-    mod config_tests {
-        use crate::Config;
-
-        #[test]
-        fn no_arg() {
-            assert!(Config::new(&[]).is_err(), "No arg should return an error.");
-        }
-
-        #[test]
-        fn one_arg() {
-            assert!(
-                Config::new(&[String::from("Hello, world!")]).is_err(),
-                "One arg should return an error."
-            );
-        }
-
-        #[test]
-        fn wrong_filename() {
-            assert!(
-                Config::new(&[String::from("Hello, world!"), String::from("Stuffs")]).is_err(),
-                "Filename that are different than poem.txt should return an error."
-            );
-        }
-
-        #[test]
-        fn valid_input() {
-            assert!(
-                Config::new(&[String::from("Hello, world!"), String::from("poem.txt")]).is_err(),
-                "Valid inputs shouldn't return an error."
-            );
-        }
-    }
-
     mod search_tests {
         use crate::*;
 
